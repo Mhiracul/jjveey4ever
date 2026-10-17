@@ -1,0 +1,532 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #173b7a;
+  --color-navyDeep: #102957;
+  --color-gold: #c5a15b;
+  --color-quartz: #eaa0c5;
+  --color-quartzSoft: #fff1f5;
+  --color-paper: #ffffff;
+  --color-surface: #fff8fa;
+  --color-line: #ebdce3;
+  --color-ink: #263146;
+  --color-muted: #686674;
+
+  --font-serif: Georgia, "Times New Roman", serif;
+  --font-sans: Arial, Helvetica, sans-serif;
+}
+
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #263146;
+  background: #fffdfd;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  font-optical-sizing: auto;
+  scroll-behavior: smooth;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 90px;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+::selection {
+  color: #fffdfd;
+  background: #233653;
+}
+
+:focus-visible {
+  outline: 2px solid #c5a15b;
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   FULL-SCREEN WEDDING ENVELOPE INTRO
+========================================= */
+.seal-logo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 100%;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+}
+.wedding-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background: #eaa0c5;
+}
+
+/* Hide all text and decorative intro elements */
+.wedding-intro .intro-frame,
+.wedding-intro .intro-glow,
+.wedding-intro .intro-corner,
+.wedding-intro .intro-kicker,
+.wedding-intro .intro-names,
+.wedding-intro .intro-date,
+.wedding-intro .intro-instruction,
+.wedding-intro .intro-hashtag {
+  display: none !important;
+}
+
+/* Full-screen envelope */
+.luxury-envelope {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  aspect-ratio: auto;
+  perspective: 1800px;
+  isolation: isolate;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  filter: none;
+}
+
+/* Envelope back */
+.envelope-shadow {
+  display: none;
+}
+
+.envelope-back {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: none;
+  border-radius: 0;
+  background:
+    radial-gradient(
+      ellipse at 50% 40%,
+      rgba(255, 255, 255, 0.24),
+      transparent 62%
+    ),
+    repeating-linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.035) 0 1px,
+      transparent 1px 5px
+    ),
+    linear-gradient(135deg, #f7c9dc, #eaa0c5 48%, #d77fa8);
+}
+
+.envelope-back::before {
+  content: "";
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  pointer-events: none;
+}
+
+.envelope-back::after {
+  content: "✦";
+  position: absolute;
+  top: 11%;
+  left: 50%;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 17px;
+  transform: translateX(-50%);
+}
+
+/* Invitation card inside */
+.envelope-letter {
+  position: absolute;
+  z-index: 1;
+  inset: 4% 8% 3%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(197, 161, 91, 0.8);
+  box-shadow: 0 5px 20px rgba(16, 41, 87, 0.1);
+  transform: translateY(3%);
+  transition: transform 1.25s cubic-bezier(0.2, 0.75, 0.2, 1) 0.35s;
+}
+
+.letter-border {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(197, 161, 91, 0.55);
+  padding: 12px;
+  overflow: hidden;
+}
+
+.letter-monogram {
+  width: clamp(35px, 5vw, 60px);
+  height: clamp(35px, 5vw, 60px);
+  object-fit: contain;
+  margin-bottom: 7px;
+}
+
+.letter-kicker {
+  margin: 0;
+  color: #686674;
+  font-size: clamp(6px, 0.8vw, 9px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.letter-title {
+  margin: 8px 0 0;
+  color: #173b7a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(15px, 2.2vw, 27px);
+  font-style: italic;
+}
+
+.letter-rule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 55%;
+  margin: 8px 0;
+  color: #c5a15b;
+}
+
+.letter-rule::before,
+.letter-rule::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #c5a15b;
+}
+
+.letter-couple {
+  margin: 0;
+  color: #173b7a;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(16px, 2.7vw, 34px);
+}
+
+.letter-couple span {
+  color: #c5a15b;
+  font-style: italic;
+}
+
+.letter-detail {
+  margin: 8px 0 0;
+  color: #263146;
+  font-size: clamp(7px, 0.95vw, 11px);
+  letter-spacing: 0.04em;
+}
+
+.letter-note {
+  margin: 6px 0 0;
+  color: #686674;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(8px, 1vw, 12px);
+  font-style: italic;
+}
+
+/* Envelope front panels */
+.envelope-front-left,
+.envelope-front-right,
+.envelope-front-bottom {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.envelope-front-left {
+  z-index: 3;
+  background: linear-gradient(135deg, #eaa0c5, #d981aa);
+  clip-path: polygon(0 0, 51% 53%, 0 100%);
+}
+
+.envelope-front-right {
+  z-index: 3;
+  background: linear-gradient(225deg, #f4bfd6, #d982aa);
+  clip-path: polygon(100% 0, 100% 100%, 49% 53%);
+}
+
+.envelope-front-bottom {
+  z-index: 4;
+  background: linear-gradient(0deg, #e28ab4, #f4c3d8);
+  clip-path: polygon(0 100%, 50% 50%, 100% 100%);
+}
+
+/* Top flap */
+.envelope-flap {
+  position: absolute;
+  z-index: 5;
+  inset: 0 0 auto;
+  width: 100%;
+  height: 58%;
+  background: linear-gradient(180deg, #f7d6e4, #eaa0c5 90%);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  backface-visibility: visible;
+  transition:
+    transform 1.05s cubic-bezier(0.2, 0.75, 0.2, 1),
+    opacity 0.45s ease;
+}
+
+/* Wax seal */
+.wax-seal {
+  position: absolute;
+  z-index: 7;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  place-items: center;
+  width: clamp(76px, 10vw, 120px);
+  aspect-ratio: 1;
+  padding: 0;
+  color: #fff;
+  border: 3px solid #d8b66f;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 30% 24%,
+      rgba(255, 255, 255, 0.22),
+      transparent 30%
+    ),
+    radial-gradient(circle, #254a85, #17315f 72%);
+  box-shadow:
+    0 0 0 5px rgba(255, 255, 255, 0.22),
+    0 8px 22px rgba(16, 41, 87, 0.3);
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 0.45s ease,
+    transform 0.65s ease,
+    box-shadow 0.5s ease;
+}
+
+.wax-seal:hover {
+  box-shadow:
+    0 0 0 8px rgba(255, 255, 255, 0.25),
+    0 0 35px rgba(197, 161, 91, 0.75);
+}
+
+.seal-initials {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(20px, 3vw, 31px);
+  font-style: italic;
+}
+
+.seal-initials span {
+  color: #eaa0c5;
+  font-size: 0.72em;
+}
+
+.seal-leaf {
+  position: absolute;
+  color: #e8c77e;
+  font-size: 16px;
+}
+
+.seal-leaf-left {
+  left: 8px;
+  transform: rotate(-35deg);
+}
+
+.seal-leaf-right {
+  right: 8px;
+  transform: scaleX(-1) rotate(-35deg);
+}
+
+/* Envelope opening animation */
+.luxury-envelope.is-open .envelope-flap {
+  transform: rotateX(180deg);
+  opacity: 0.18;
+}
+
+.luxury-envelope.is-open .envelope-letter {
+  transform: translateY(-13%);
+}
+
+.luxury-envelope.is-open .envelope-front-left,
+.luxury-envelope.is-open .envelope-front-right,
+.luxury-envelope.is-open .envelope-front-bottom {
+  opacity: 0.08;
+  transition: opacity 0.8s ease 0.2s;
+}
+
+.wax-seal.seal-away {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(1.65);
+  pointer-events: none;
+}
+
+/* Enter button: hidden until envelope opens */
+.wedding-intro > .intro-button {
+  position: absolute;
+  z-index: 20;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  left: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 14px 25px;
+  color: #fff;
+  background: #173b7a;
+  border: 1px solid #c5a15b;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 12px);
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease,
+    background 0.3s ease,
+    color 0.3s ease;
+}
+
+.wedding-intro:has(.luxury-envelope.is-open) > .intro-button {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+.wedding-intro > .intro-button:hover {
+  color: #102957;
+  background: #c5a15b;
+}
+
+.intro-button-enter {
+  animation: introButtonReveal 0.7s ease both;
+}
+
+@keyframes introButtonReveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .envelope-back::before {
+    inset: 10px;
+  }
+
+  .envelope-flap {
+    height: 55%;
+  }
+
+  .letter-border {
+    padding: 5px;
+  }
+
+  .letter-monogram {
+    margin-bottom: 3px;
+  }
+
+  .letter-title {
+    margin-top: 4px;
+  }
+
+  .letter-rule {
+    margin: 4px 0;
+  }
+
+  .letter-detail {
+    margin-top: 4px;
+  }
+
+  .letter-note {
+    margin-top: 3px;
+  }
+
+  .wax-seal {
+    width: 82px;
+  }
+
+  .wedding-intro > .intro-button {
+    bottom: max(20px, env(safe-area-inset-bottom));
+    padding: 13px 22px;
+    font-size: 9px;
+  }
+}
+
+/* Short screens */
+@media (max-height: 500px) {
+  .wax-seal {
+    width: 64px;
+  }
+
+  .wedding-intro > .intro-button {
+    bottom: max(12px, env(safe-area-inset-bottom));
+    padding: 10px 18px;
+  }
+}
