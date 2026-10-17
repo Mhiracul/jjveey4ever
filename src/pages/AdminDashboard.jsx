@@ -168,6 +168,7 @@ const blankItem = {
   naira: "",
   pounds: "",
   imageUrl: "",
+  cloudinaryPublicId: "",
   active: true,
   sortOrder: 0,
 };
@@ -355,7 +356,7 @@ export default function AdminDashboard() {
         setNotice("Photo uploaded to the wedding gallery.");
       }
 
-      return result.imageUrl;
+      return result;
     } catch (error) {
       if (error.name === "AbortError") {
         setError(
@@ -814,17 +815,34 @@ export default function AdminDashboard() {
                       onChange={async (e) => {
                         const input = e.currentTarget;
                         const file = input.files?.[0];
+
                         if (!file) return;
-                        const imageUrl = await uploadFile(file, "registry");
-                        if (imageUrl) {
-                          await request(`/admin/registry/${item._id}`, {
-                            method: "PATCH",
-                            body: JSON.stringify({ imageUrl }),
-                          });
-                          await load();
-                          setNotice("Registry photo updated.");
+
+                        try {
+                          const result = await uploadFile(file, "registry");
+
+                          if (result?.imageUrl && result?.cloudinaryPublicId) {
+                            await request(`/admin/registry/${item._id}`, {
+                              method: "PATCH",
+                              body: JSON.stringify({
+                                imageUrl: result.imageUrl,
+                                cloudinaryPublicId: result.cloudinaryPublicId,
+                              }),
+                            });
+
+                            await load();
+                            setNotice(
+                              "Registry photo saved to Cloudinary and MongoDB.",
+                            );
+                          }
+                        } catch (error) {
+                          setError(
+                            error.message ||
+                              "Could not save the registry photo.",
+                          );
+                        } finally {
+                          input.value = "";
                         }
-                        input.value = "";
                       }}
                     />
                   </label>
@@ -838,6 +856,7 @@ export default function AdminDashboard() {
                           naira: item.naira,
                           pounds: item.pounds,
                           imageUrl: item.imageUrl || "",
+                          cloudinaryPublicId: item.cloudinaryPublicId || "",
                           active: item.active,
                           sortOrder: item.sortOrder || 0,
                         });

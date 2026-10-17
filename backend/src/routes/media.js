@@ -128,10 +128,9 @@ router.post(
           throw databaseError;
         }
       }
-
       return res.status(201).json({
         imageUrl,
-        filename: uploadedAsset.public_id,
+        cloudinaryPublicId: uploadedAsset.public_id,
       });
     } catch (error) {
       next(error);
