@@ -20,12 +20,22 @@ const port = Number(process.env.PORT || 5001);
 
 app.disable("x-powered-by");
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+
+const allowedOrigin = (
+  process.env.CLIENT_ORIGIN || "https://jjveey4ever.vercel.app"
+)
+  .trim()
+  .replace(/\/+$/, "");
+
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "https://jjveey4ever.vercel.app",
+    origin: allowedOrigin,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
+
 app.use(express.json({ limit: "100kb" }));
 app.use(cookieParser());
 const backendDir = path.dirname(fileURLToPath(import.meta.url));
