@@ -15,9 +15,10 @@ import {
   CreditCard,
 } from "lucide-react";
 
-const API =
-  import.meta.env.VITE_API_URL || "https://jjveey4ever-backend.vercel.app/api";
-const API_ORIGIN = API.replace(/\/api\/?$/, "");
+const API = import.meta.env.VITE_API_URL || "/api";
+
+const API_ORIGIN = "https://jjveey4ever-backend.vercel.app";
+
 const mediaUrl = (value) =>
   !value
     ? ""
