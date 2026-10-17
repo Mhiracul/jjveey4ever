@@ -174,6 +174,7 @@ const blankItem = {
 
 export default function AdminDashboard() {
   const [authenticated, setAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [tab, setTab] = useState("overview");
   const [stats, setStats] = useState(null);
   const [rsvps, setRsvps] = useState([]);
@@ -190,6 +191,16 @@ export default function AdminDashboard() {
   );
   const [editingItem, setEditingItem] = useState(null);
   const [itemForm, setItemForm] = useState(blankItem);
+
+  useEffect(() => {
+    if (!notice) return;
+
+    const timeout = setTimeout(() => {
+      setNotice("");
+    }, 5000);
+
+    return () => clearTimeout(timeout);
+  }, [notice]);
 
   const load = useCallback(async () => {
     setBusy(true);
@@ -221,8 +232,36 @@ export default function AdminDashboard() {
   }, [query]);
 
   useEffect(() => {
-    if (authenticated) load();
-  }, [authenticated, load]);
+    let cancelled = false;
+
+    async function checkSession() {
+      try {
+        const me = await request("/admin/me");
+
+        if (!me.admin) {
+          throw new Error("Please sign in again.");
+        }
+
+        if (!cancelled) {
+          setAuthenticated(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setAuthenticated(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setAuthChecking(false);
+        }
+      }
+    }
+
+    checkSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   async function logout() {
     await request("/admin/logout", { method: "POST" }).catch(() => {});
     setAuthenticated(false);
@@ -382,7 +421,17 @@ export default function AdminDashboard() {
     }
   }
 
-  if (!authenticated) return <Login onLogin={() => setAuthenticated(true)} />;
+  if (authChecking) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#f8f5f1] text-navy">
+        <p className="text-sm">Checking your admin session...</p>
+      </main>
+    );
+  }
+
+  if (!authenticated) {
+    return <Login onLogin={() => setAuthenticated(true)} />;
+  }
   const tabs = [
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "rsvps", label: "Guest RSVPs", icon: Users },
