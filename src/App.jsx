@@ -14,8 +14,8 @@ import {
   X,
 } from "lucide-react";
 
-import coupleMain from "./prewedding/couple-main.jpg";
-import coupleRomantic from "./prewedding/couple-romantic.jpg";
+import coupleMain from "./couple-main.jpg";
+import coupleRomantic from "./couple-romantic.jpg";
 import CoupleGallery from "./components/CoupleGallery.jsx";
 import weddingLogo from "./assets/logo.JPG";
 import invitationCard from "./assets/IV.JPG";
