@@ -22,10 +22,7 @@ const allowedMime = new Map([
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 8 * 1024 * 1024,
-    files: 1,
-  },
+
   fileFilter: (_req, file, cb) => {
     if (allowedMime.has(file.mimetype)) {
       cb(null, true);

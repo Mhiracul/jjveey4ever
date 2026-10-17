@@ -325,11 +325,6 @@ export default function AdminDashboard() {
   async function uploadFile(file, category = "gallery") {
     if (!file) return;
 
-    if (file.size > 8 * 1024 * 1024) {
-      setError("Image must be 8 MB or smaller before uploading.");
-      return null;
-    }
-
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000);
 
