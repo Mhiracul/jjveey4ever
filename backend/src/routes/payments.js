@@ -8,14 +8,14 @@ const allowedKinds = new Set(["cash", "registry", "home"]);
 
 function apiRoot() {
   return String(
-    process.env.API_PUBLIC_URL || "http://localhost:5001/api",
+    process.env.API_PUBLIC_URL || "https://jjveey4ever-backend.vercel.app/api",
   ).replace(/\/$/, "");
 }
 function clientRoot() {
   return String(
     process.env.CLIENT_PUBLIC_URL ||
       process.env.CLIENT_ORIGIN ||
-      "http://localhost:5174",
+      "https://jjveey4ever.vercel.app",
   ).replace(/\/$/, "");
 }
 

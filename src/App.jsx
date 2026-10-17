@@ -195,7 +195,9 @@ function App() {
 
   // Load uploaded gallery photos from the backend
   useEffect(() => {
-    const API = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+    const API =
+      import.meta.env.VITE_API_URL ||
+      "https://jjveey4ever-backend.vercel.app/api";
 
     fetch(`${API}/gallery`)
       .then((response) => (response.ok ? response.json() : null))
@@ -252,7 +254,9 @@ function App() {
 
   // Load registry items
   useEffect(() => {
-    const API = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+    const API =
+      import.meta.env.VITE_API_URL ||
+      "https://jjveey4ever-backend.vercel.app/api";
 
     fetch(`${API}/registry`)
       .then((response) => (response.ok ? response.json() : null))
@@ -314,7 +318,9 @@ function App() {
     setRsvpSubmitting(true);
 
     try {
-      const API = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+      const API =
+        import.meta.env.VITE_API_URL ||
+        "https://jjveey4ever-backend.vercel.app/api";
 
       const response = await fetch(`${API}/rsvps`, {
         method: "POST",
@@ -374,7 +380,9 @@ function App() {
     setGiftSubmitting(true);
 
     try {
-      const API = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+      const API =
+        import.meta.env.VITE_API_URL ||
+        "https://jjveey4ever-backend.vercel.app/api";
 
       const response = await fetch(`${API}/payments/create`, {
         method: "POST",
@@ -830,7 +838,8 @@ function App() {
               <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {galleryImages.map((image) => {
                   const API =
-                    import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+                    import.meta.env.VITE_API_URL ||
+                    "https://jjveey4ever-backend.vercel.app/api";
 
                   const origin = API.replace(/\/api\/?$/, "");
 

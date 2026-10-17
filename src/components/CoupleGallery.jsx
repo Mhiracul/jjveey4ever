@@ -1,54 +1,74 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Heart, Expand } from "lucide-react";
 
-import mainPhoto from "../prewedding/couple-main.jpg";
-import walkingPhoto from "../prewedding/couple-walking.jpg";
-import closeupPhoto from "../prewedding/couple-closeup.jpg";
-import romanticPhoto from "../prewedding/couple-romantic.jpg";
-import fullLengthPhoto from "../prewedding/couple-full-length.jpg";
-import funPhoto from "../prewedding/couple-fun.jpg";
+const API = (
+  import.meta.env.VITE_API_URL || "https://jjveey4ever-backend.vercel.app/api"
+).replace(/\/+$/, "");
 
-const photos = [
-  {
-    src: mainPhoto,
-    alt: "Jennifer and Vincent together",
-    caption: "A love worth celebrating",
-    layout: "large",
-  },
-  {
-    src: walkingPhoto,
-    alt: "Jennifer and Vincent walking together",
-    caption: "Every step, together",
-    layout: "small",
-  },
-  {
-    src: closeupPhoto,
-    alt: "A close-up pre-wedding portrait",
-    caption: "You and me, always",
-    layout: "small",
-  },
-  {
-    src: romanticPhoto,
-    alt: "Jennifer and Vincent sharing a romantic moment",
-    caption: "Our kind of forever",
-    layout: "small",
-  },
-  {
-    src: fullLengthPhoto,
-    alt: "Jennifer and Vincent in a full-length portrait",
-    caption: "Two hearts, one journey",
-    layout: "small",
-  },
-  {
-    src: funPhoto,
-    alt: "Jennifer and Vincent enjoying a moment together",
-    caption: "My favourite person",
-    layout: "wide",
-  },
-];
+const API_ORIGIN = API.replace(/\/api$/, "");
+
+const mediaUrl = (value) => {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value;
+  return `${API_ORIGIN}${value.startsWith("/") ? "" : "/"}${value}`;
+};
+
+const getLayout = (index, total) => {
+  if (index === 0) return "large";
+  if (index === total - 1 && total > 2) return "wide";
+  return "small";
+};
 
 export default function CoupleGallery() {
+  const [photos, setPhotos] = useState([]);
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadGallery() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(`${API}/gallery`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load the wedding gallery.");
+        }
+
+        const data = await response.json();
+        setPhotos(Array.isArray(data.images) ? data.images : []);
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setError(
+            "Our photos are temporarily unavailable. Please check back soon.",
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    loadGallery();
+
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPhoto) return;
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setSelectedPhoto(null);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedPhoto]);
 
   return (
     <section
@@ -81,47 +101,75 @@ export default function CoupleGallery() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
-          {photos.map((photo, index) => (
-            <button
-              key={photo.src}
-              type="button"
-              onClick={() => setSelectedPhoto(photo)}
-              className={`group relative overflow-hidden rounded-2xl bg-quartzSoft text-left shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#C5A15B] ${
-                photo.layout === "large"
-                  ? "col-span-2 row-span-2 min-h-85 sm:min-h-125"
-                  : photo.layout === "wide"
-                    ? "col-span-2 min-h-52.5 sm:min-h-70"
-                    : "min-h-52.5 sm:min-h-60"
-              }`}
-              aria-label={`View photo: ${photo.caption}`}
-            >
-              <img
-                src={photo.src}
-                alt={photo.alt}
-                loading={index === 0 ? "eager" : "lazy"}
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-              />
+        {loading ? (
+          <p className="py-16 text-center text-sm text-gray-500">
+            Loading our favourite memories...
+          </p>
+        ) : error ? (
+          <p role="status" className="py-16 text-center text-sm text-gray-500">
+            {error}
+          </p>
+        ) : photos.length === 0 ? (
+          <div className="rounded-2xl bg-quartzSoft/60 px-6 py-16 text-center">
+            <Heart className="mx-auto mb-4 text-[#D47BA9]" size={28} />
+            <p className="font-serif text-xl text-navy">
+              Our memories are coming soon
+            </p>
+            <p className="mt-2 text-sm text-gray-500">
+              We can’t wait to share our favourite moments with you.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+            {photos.map((photo, index) => {
+              const layout = getLayout(index, photos.length);
+              const caption =
+                photo.caption?.trim() ||
+                photo.alt ||
+                "A moment worth remembering";
 
-              <div className="absolute inset-0 bg-linear-to-t from-[#101A35]/75 via-transparent to-black/5 opacity-80 transition group-hover:opacity-100" />
+              return (
+                <button
+                  key={photo._id || photo.imageUrl}
+                  type="button"
+                  onClick={() => setSelectedPhoto({ ...photo, caption })}
+                  aria-label={`View photo: ${caption}`}
+                  className={`group relative overflow-hidden rounded-2xl bg-quartzSoft text-left shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-[#C5A15B] ${
+                    layout === "large"
+                      ? "col-span-2 row-span-2 min-h-85 sm:min-h-125"
+                      : layout === "wide"
+                        ? "col-span-2 min-h-52.5 sm:min-h-70"
+                        : "min-h-52.5 sm:min-h-60"
+                  }`}
+                >
+                  <img
+                    src={mediaUrl(photo.imageUrl)}
+                    alt={photo.alt || caption}
+                    loading={index === 0 ? "eager" : "lazy"}
+                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                  />
 
-              <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:p-5">
-                <div>
-                  <p className="font-serif text-sm text-white sm:text-lg">
-                    {photo.caption}
-                  </p>
-                  <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/75 sm:text-xs">
-                    #JVeey4eva’26
-                  </p>
-                </div>
+                  <div className="absolute inset-0 bg-linear-to-t from-[#101A35]/75 via-transparent to-black/5 opacity-80 transition group-hover:opacity-100" />
 
-                <span className="rounded-full border border-white/40 bg-white/15 p-2 text-white backdrop-blur-md transition group-hover:bg-white group-hover:text-navy">
-                  <Expand size={15} />
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
+                  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 sm:p-5">
+                    <div>
+                      <p className="font-serif text-sm text-white sm:text-lg">
+                        {caption}
+                      </p>
+                      <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-white/75 sm:text-xs">
+                        #JVeey4eva’26
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-white/40 bg-white/15 p-2 text-white backdrop-blur-md transition group-hover:bg-white group-hover:text-navy">
+                      <Expand size={15} />
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <p className="mt-8 text-center font-serif text-lg italic text-navy/70">
           December 16, 2026 — The beginning of our forever.
@@ -132,9 +180,6 @@ export default function CoupleGallery() {
         <div
           className="fixed inset-0 z-100 flex items-center justify-center bg-[#101322]/95 p-4 backdrop-blur-sm"
           onClick={() => setSelectedPhoto(null)}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") setSelectedPhoto(null);
-          }}
           role="presentation"
         >
           <button
@@ -151,11 +196,11 @@ export default function CoupleGallery() {
             onClick={(event) => event.stopPropagation()}
           >
             <img
-              src={selectedPhoto.src}
-              alt={selectedPhoto.alt}
+              src={mediaUrl(selectedPhoto.imageUrl)}
+              alt={selectedPhoto.alt || selectedPhoto.caption}
               className="max-h-[78vh] max-w-full rounded-xl object-contain shadow-2xl"
             />
-            <p className="mt-4 font-serif text-xl italic text-white">
+            <p className="mt-4 text-center font-serif text-xl italic text-white">
               {selectedPhoto.caption}
             </p>
           </div>

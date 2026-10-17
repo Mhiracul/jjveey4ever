@@ -22,7 +22,7 @@ app.disable("x-powered-by");
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || "http://localhost:5174",
+    origin: process.env.CLIENT_ORIGIN || "https://jjveey4ever.vercel.app",
     credentials: true,
   }),
 );

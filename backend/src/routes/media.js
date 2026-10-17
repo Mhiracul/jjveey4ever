@@ -1,61 +1,174 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
-import fs from "node:fs";
+import { v2 as cloudinary } from "cloudinary";
 import GalleryImage from "../models/GalleryImage.js";
 import { requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
-const backendDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
-const uploadDir = path.join(backendDir, "uploads");
-fs.mkdirSync(uploadDir, { recursive: true });
-const allowedMime = new Map([["image/jpeg", ".jpg"], ["image/png", ".png"], ["image/webp", ".webp"], ["image/avif", ".avif"]]);
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, uploadDir),
-    filename: (_req, file, cb) => cb(null, `${Date.now()}-${randomUUID()}${allowedMime.get(file.mimetype) || ".img"}`),
-  }),
-  limits: { fileSize: 8 * 1024 * 1024, files: 1 },
-  fileFilter: (_req, file, cb) => allowedMime.has(file.mimetype) ? cb(null, true) : cb(new Error("Upload a JPG, PNG, WebP, or AVIF image.")),
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-function publicUrl(req, file) {
-  const base = String(process.env.API_PUBLIC_URL || `${req.protocol}://${req.get("host")}/api`).replace(/\/api\/?$/, "").replace(/\/$/, "");
-  return `${base}/uploads/${file.filename}`;
+const allowedMime = new Map([
+  ["image/jpeg", "jpg"],
+  ["image/png", "png"],
+  ["image/webp", "webp"],
+  ["image/avif", "avif"],
+]);
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+    files: 1,
+  },
+  fileFilter: (_req, file, cb) => {
+    if (allowedMime.has(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Upload a JPG, PNG, WebP, or AVIF image."));
+    }
+  },
+});
+
+function uploadToCloudinary(file, category) {
+  return new Promise((resolve, reject) => {
+    const folder =
+      category === "gallery" ? "jveey4eva26/gallery" : "jveey4eva26/uploads";
+
+    const publicId = `${Date.now()}-${randomUUID()}`;
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        public_id: publicId,
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "avif"],
+        transformation: [
+          { width: 2400, height: 2400, crop: "limit" },
+          { quality: "auto", fetch_format: "auto" },
+        ],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        if (!result) {
+          return reject(new Error("Cloudinary did not return an image."));
+        }
+        resolve(result);
+      },
+    );
+
+    stream.end(file.buffer);
+  });
 }
 
 router.get("/gallery", async (_req, res, next) => {
-  try { res.json({ images: await GalleryImage.find().sort({ sortOrder: 1, createdAt: -1 }).lean() }); }
-  catch (error) { next(error); }
+  try {
+    const images = await GalleryImage.find()
+      .sort({ sortOrder: 1, createdAt: -1 })
+      .lean();
+
+    res.json({ images });
+  } catch (error) {
+    next(error);
+  }
 });
 
-router.post("/media/upload", requireAdmin, upload.single("image"), async (req, res, next) => {
-  try {
-    if (!req.file) return res.status(400).json({ message: "Choose an image to upload." });
-    const imageUrl = publicUrl(req, req.file);
-    const category = String(req.body?.category || "gallery");
-    if (category === "gallery") {
-      const image = await GalleryImage.create({ imageUrl, alt: String(req.body?.alt || "Jennifer and Vincent wedding photograph").slice(0, 180), caption: String(req.body?.caption || "").slice(0, 240) });
-      return res.status(201).json({ image, imageUrl });
+router.post(
+  "/media/upload",
+  requireAdmin,
+  upload.single("image"),
+  async (req, res, next) => {
+    let uploadedAsset;
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          message: "Choose an image to upload.",
+        });
+      }
+
+      if (
+        !process.env.CLOUDINARY_CLOUD_NAME ||
+        !process.env.CLOUDINARY_API_KEY ||
+        !process.env.CLOUDINARY_API_SECRET
+      ) {
+        return res.status(500).json({
+          message: "Cloudinary is not configured on the server.",
+        });
+      }
+
+      const category = String(req.body?.category || "gallery");
+      uploadedAsset = await uploadToCloudinary(req.file, category);
+
+      const imageUrl = uploadedAsset.secure_url;
+
+      if (category === "gallery") {
+        try {
+          const image = await GalleryImage.create({
+            imageUrl,
+            cloudinaryPublicId: uploadedAsset.public_id,
+            alt: String(
+              req.body?.alt || "Jennifer and Vincent wedding photograph",
+            ).slice(0, 180),
+            caption: String(req.body?.caption || "").slice(0, 240),
+          });
+
+          return res.status(201).json({ image, imageUrl });
+        } catch (databaseError) {
+          // Avoid leaving an orphaned Cloudinary image if MongoDB fails.
+          await cloudinary.uploader
+            .destroy(uploadedAsset.public_id)
+            .catch(() => {});
+
+          throw databaseError;
+        }
+      }
+
+      return res.status(201).json({
+        imageUrl,
+        filename: uploadedAsset.public_id,
+      });
+    } catch (error) {
+      next(error);
     }
-    res.status(201).json({ imageUrl, filename: req.file.filename });
-  } catch (error) { next(error); }
-});
+  },
+);
 
 router.delete("/gallery/:id", requireAdmin, async (req, res, next) => {
   try {
-    const image = await GalleryImage.findByIdAndDelete(req.params.id);
-    if (!image) return res.status(404).json({ message: "Gallery image not found." });
-    try {
-      const url = new URL(image.imageUrl);
-      const filename = path.basename(url.pathname);
-      const file = path.join(uploadDir, filename);
-      if (file.startsWith(uploadDir)) fs.rmSync(file, { force: true });
-    } catch { /* Image may be stored remotely; deleting the database record is sufficient. */ }
+    const image = await GalleryImage.findById(req.params.id);
+
+    if (!image) {
+      return res.status(404).json({
+        message: "Gallery image not found.",
+      });
+    }
+
+    // Remove the cloud asset before removing its database record.
+    if (image.cloudinaryPublicId) {
+      const result = await cloudinary.uploader.destroy(
+        image.cloudinaryPublicId,
+        { resource_type: "image", invalidate: true },
+      );
+
+      if (result.result !== "ok" && result.result !== "not found") {
+        return res.status(502).json({
+          message: "The image could not be deleted from Cloudinary.",
+        });
+      }
+    }
+
+    await image.deleteOne();
+
     res.json({ message: "Gallery image deleted." });
-  } catch (error) { next(error); }
+  } catch (error) {
+    next(error);
+  }
 });
 
 export default router;
