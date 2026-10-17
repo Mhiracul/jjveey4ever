@@ -46,6 +46,50 @@ const currency = (code, value) =>
     maximumFractionDigits: 2,
   }).format(Number(value || 0));
 
+async function prepareImageForUpload(file) {
+  // Keep small images unchanged.
+  if (file.size <= 1.5 * 1024 * 1024) return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const maxDimension = 2000;
+    const scale = Math.min(
+      1,
+      maxDimension / Math.max(bitmap.width, bitmap.height),
+    );
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      bitmap.close();
+      return file;
+    }
+
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const compressed = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.82);
+    });
+
+    // Use the compressed image only if it is smaller.
+    if (compressed && compressed.size < file.size) {
+      return new File(
+        [compressed],
+        `${file.name.replace(/\.[^.]+$/, "")}.webp`,
+        { type: "image/webp", lastModified: Date.now() },
+      );
+    }
+  } catch (error) {
+    console.warn("Image compression skipped:", error);
+  }
+
+  return file;
+}
+
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -237,32 +281,58 @@ export default function AdminDashboard() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
   async function uploadFile(file, category = "gallery") {
     if (!file) return;
-    const form = new FormData();
-    form.append("image", file);
-    form.append("category", category);
-    form.append("alt", imageAlt || "Jennifer and Vincent wedding photograph");
+
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image must be 8 MB or smaller before uploading.");
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
     setUploading(true);
     setError("");
     setNotice("");
+
     try {
+      const preparedFile = await prepareImageForUpload(file);
+
+      const form = new FormData();
+      form.append("image", preparedFile);
+      form.append("category", category);
+      form.append("alt", imageAlt || "Jennifer and Vincent wedding photograph");
+
       const result = await request("/media/upload", {
         method: "POST",
         body: form,
+        signal: controller.signal,
       });
-      if (category === "gallery") {
+
+      if (category === "gallery" && result.image) {
         setGallery((current) => [result.image, ...current]);
         setNotice("Photo uploaded to the wedding gallery.");
       }
+
       return result.imageUrl;
-    } catch (e) {
-      setError(e.message);
+    } catch (error) {
+      if (error.name === "AbortError") {
+        setError(
+          "Upload timed out after 60 seconds. Please try a smaller image and check the backend logs if it happens again.",
+        );
+      } else {
+        setError(error.message || "Image upload failed. Please try again.");
+      }
+
       return null;
     } finally {
+      clearTimeout(timeoutId);
       setUploading(false);
     }
   }
+
   async function saveItem(event) {
     event.preventDefault();
     setError("");
