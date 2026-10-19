@@ -30,7 +30,7 @@ const wedding = {
   date: "Wednesday, 16 December 2026",
   time: "10:30 AM",
   venue: "Kahera Country Club (Garden)",
-  address: "Kafene Extension, Abuja",
+  address: " Katampe Extension, Abuja",
   hashtag: "#JVeey4eva’26",
   music: "Count on You — Johnny Drille",
 };
@@ -737,7 +737,7 @@ function App() {
                 <p className="text-sm text-muted">{wedding.address}</p>
 
                 <a
-                  href="https://www.google.com/maps/search/?api=1&query=Kahera+Country+Club+Garden+Kafene+Extension+Abuja"
+                  href="https://www.google.com/maps/search/?api=1&query=Kahera+Country+Club+Garden+ Katampe+Extension+Abuja"
                   target="_blank"
                   rel="noreferrer"
                   className="mt-5 inline-flex items-center gap-2 border-b border-gold pb-1 text-xs uppercase tracking-wider text-navy hover:text-gold"
